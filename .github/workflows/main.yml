@@ -1,0 +1,25 @@
+name: RapidAPI Filter and Telegram Sender
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # Hər saatın əvvəlində işə düşür
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Kodları yüklə
+      uses: actions/checkout@v3
+
+    - name: Python quraşdır
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Asılılıqları quraşdır
+      run: pip install requests
+
+    - name: Filtr və Göndəriş
+      run: python main.py
