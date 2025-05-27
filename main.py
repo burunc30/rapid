@@ -1,39 +1,41 @@
 import requests
+import json
 
-url = "https://football-prediction-api.p.rapidapi.com/api/v2/predictions"
+# Sənin RapidAPI açarın
+API_KEY = "2f07e2d462mshb74dbb0d87354aep18f68ajsn92ddc36803b3"
+
+# API endpoint – 25 may 2024 üçün nümunə olaraq İngiltərə Premier League (league id 39)
+url = "https://api-football-v1.p.rapidapi.com/v3/odds"
 
 querystring = {
-    "market": "classic",
-    "federation": "UEFA",
-    "iso_date": "2025-05-24"
+    "date": "2024-05-25",
+    "league": "39",
+    "season": "2023"
 }
 
 headers = {
-    "X-RapidAPI-Key": "2f07e2d462mshb74dbb0d87354aep18f68ajsn92ddc36803b3",
-    "X-RapidAPI-Host": "football-prediction-api.p.rapidapi.com"
+    "X-RapidAPI-Key": API_KEY,
+    "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
 }
 
 response = requests.get(url, headers=headers, params=querystring)
+data = response.json()
 
-if response.status_code == 200:
-    data = response.json()
-    predictions = data.get("data", [])
-    
-    filtered_matches = []
-    for match in predictions:
-        home_team = match['home_team']
-        away_team = match['away_team']
-        odds = match.get('odds', {})
+# Formatlı çap – test məqsədilə
+print(json.dumps(data, indent=2))
 
-        home_odds = odds.get('home_win')
-        if home_odds and float(home_odds) > 2.0:
-            filtered_matches.append(f"{home_team} vs {away_team} — Home odds: {home_odds}")
-
-    if filtered_matches:
-        print("Filtrə uyğun oyunlar:")
-        for m in filtered_matches:
-            print(m)
-    else:
-        print("Filtrə uyğun oyun tapılmadı.")
+# Əmsallar varsa göstər
+if data["response"]:
+    print("\n--- Əmsallar ---\n")
+    for match in data["response"]:
+        fixture = match.get("fixture", {}).get("id", "Bilinmir")
+        print(f"Fixture ID: {fixture}")
+        bookmakers = match.get("bookmakers", [])
+        for bookmaker in bookmakers:
+            print(f"Bookmaker: {bookmaker['name']}")
+            for bet in bookmaker["bets"]:
+                print(f"  Market: {bet['name']}")
+                for val in bet["values"]:
+                    print(f"    {val['value']} -> {val['odd']}")
 else:
-    print("Xəta baş verdi:", response.status_code, response.text)
+    print("Uygun matç və ya əmsal tapılmadı.")
