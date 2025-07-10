@@ -1,26 +1,27 @@
-name: RapidAPI Odds and Telegram Sender
+name: Run RapidAPI Football Odds
 
 on:
-  schedule:
-    - cron: '0 12 * * *'  # Hər gün saat 12:00 UTC
   workflow_dispatch:
+  push:
+    paths:
+      - main.py
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Kodları yüklə
-        uses: actions/checkout@v3
+    - name: Reponu klonla
+      uses: actions/checkout@v3
 
-      - name: Python quraşdır
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Python quraşdır
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Asılılıqları quraşdır (əgər varsa)
-        run: |
-          pip install requests
+    - name: Kitabxanaları yüklə
+      run: |
+        pip install -r requirements.txt
 
-      - name: Əsas Python scriptini işə sal
-        run: python main.py
+    - name: Python skriptini işə sal
+      run: python main.py
