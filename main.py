@@ -1,55 +1,50 @@
 import requests
-import json
-import time
+from datetime import datetime
 
-# RAPIDAPI MƏLUMATLARI
-RAPID_API_KEY = "2f07e2d462mshb74dbb0d87354aep18f68ajsn92ddc36803b3"
-RAPID_API_HOST = "odds.p.rapidapi.com"
+# 🔐 RapidAPI açarın (sənin verdiyin açar artıq əlavə olunub)
+API_KEY = "7fe03acd62mshe42ef629a8f7768p1d8621jsn57b3d87aa3dd"
 
-# TELEGRAM MƏLUMATLARI
-BOT_TOKEN = "8106341353:AAFIi3nfPOlydtCM_eYHiSIbDR0C1RFoaG4"
-CHAT_ID = "1488455191"
+# 📅 Bugünkü tarix
+today = datetime.now().strftime("%Y-%m-%d")
 
-# TELEGRAMA MESAJ GÖNDƏRƏN FUNKSIYA
-def send_to_telegram(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": message[:4000]  # Telegram limiti
-    }
-    try:
-        requests.post(url, json=payload)
-    except Exception as e:
-        print("Telegrama göndərilə bilmədi:", e)
+# 📡 API ünvanı və parametrlər
+url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+querystring = {"date": today}
 
-# RAPID API-DƏN ƏMSAL MƏLUMATLARINI AL
-def fetch_odds_from_rapidapi():
-    url = "https://odds.p.rapidapi.com/v4/sports/soccer_epl/odds"
+headers = {
+    "X-RapidAPI-Key": API_KEY,
+    "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+}
 
-    querystring = {
-        "regions": "eu",      # Avropa əmsalları
-        "markets": "h2h",     # 1X2 bazarı (home/draw/away)
-        "oddsFormat": "decimal",
-        "dateFormat": "iso"
-    }
+# 🛰️ Sorğunu göndər
+response = requests.get(url, headers=headers, params=querystring)
 
-    headers = {
-        "X-RapidAPI-Key": RAPID_API_KEY,
-        "X-RapidAPI-Host": RAPID_API_HOST
-    }
+# ✅ Cavabı oxu
+data = response.json()
 
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        data = response.json()
-        if not data:
-            send_to_telegram("RapidAPI: Heç bir data gəlmədi.")
-        else:
-            # JSON formatında Telegrama göndər
-            formatted = json.dumps(data, indent=2)[:4000]
-            send_to_telegram("📊 RapidAPI Cavabı:\n\n" + formatted)
-    except Exception as e:
-        send_to_telegram(f"RapidAPI xəta verdi: {e}")
+# 📋 Nəticəni göstər
+for match in data.get("response", []):
+    teams = match.get("teams", {})
+    home = teams.get("home", {}).get("name", "Unknown")
+    away = teams.get("away", {}).get("name", "Unknown")
+    league = match.get("league", {}).get("name", "Unknown")
+    time = match.get("fixture", {}).get("date", "Time?")[:16]
 
-# İCRA
-if __name__ == "__main__":
-    fetch_odds_from_rapidapi()
+    print(f"🏟️ {league}")
+    print(f"🕒 {time}")
+    print(f"⚽ {home} vs {away}")
+
+    bookmakers = match.get("bookmakers", [])
+    for bookmaker in bookmakers:
+        if bookmaker["name"] == "Bet365":  # Seçdiyin bukmeker
+            for bet in bookmaker["bets"]:
+                if bet["name"] == "Match Winner":
+                    print("🔢 1X2 əmsalları:")
+                    for value in bet["values"]:
+                        print(f"  {value['value']}: {value['odd']}")
+                if bet["name"] == "Over/Under":
+                    print("🔼 Over/Under 2.5:")
+                    for value in bet["values"]:
+                        if value["value"] in ["Over 2.5", "Under 2.5"]:
+                            print(f"  {value['value']}: {value['odd']}")
+    print("-" * 40)
